@@ -1,6 +1,5 @@
-import requests
 import re
-
+import requests
 
 
 url = 'https://rutracker.net/forum/login.php'
@@ -22,8 +21,8 @@ data = {
 
 
 class Item():
-        
-    def __init__(self, title, href, seedmed, leechmed, capacity):        
+
+    def __init__(self, title, href, seedmed, leechmed, capacity):
         self.title = title
         self.href = href
         self.seedmed = seedmed
@@ -33,52 +32,49 @@ class Item():
     def get_magnet_href(self, session):
         url = self.href
         result = session.get(url).text
-       
+
         my_patern = re.compile(r"magnet:.*magnet\"")
         start = my_patern.search(result).start()
         end = my_patern.search(result).end()
-        
+
         magnet_href = result[start:end-1]
-        
+
         return magnet_href
 
 
-#Поиск
+# Поиск
 def search(value, session):
     url = f"https://rutracker.net/forum/tracker.php?nm={value}"
     result = session.get(url)
-   
+
     return result
-
-
-
 
 
 def get_list_search(text):
     text = text.replace('\n', '')
-    text = text.replace('\t', '')    
+    text = text.replace('\t', '')
     my_patern = re.compile(r"<tbody>.*</tbody>")
     res = my_patern.search(text)
     text = text[res.start():res.end()]
-    text = text.replace('><tr','>\n<tr')
-     
+    text = text.replace('><tr', '>\n<tr')
 
     my_patern = re.compile(r"<tr.*</tr>")
     return my_patern.findall(text)
+
 
 def make_item_wrapper(list):
     items = []
 
     for res in list_of_res:
-        res = res.replace("\">", "\">\n")       
-       
+        res = res.replace("\">", "\">\n")
+
         my_patern = re.compile(r"bold\" href=\".*\">")
         start = my_patern.search(res).start()
         end = my_patern.search(res).end()
         href = f"https://rutracker.net/forum/{res[start+12:end-2]}"
 
         res = res.replace('\n', '')
-        res = res.replace('</a></div>', '</a>\n</div>')       
+        res = res.replace('</a></div>', '</a>\n</div>')
         my_patern = re.compile(r"viewtopic.*</a>")
         start = my_patern.search(res).start()
         end = my_patern.search(res).end()
@@ -92,19 +88,20 @@ def make_item_wrapper(list):
         capacity = capacity[capacity.find('>')+1:len(capacity)-12]
         capacity = capacity.replace('&nbsp;', ' ')
 
-        res = res.replace("</td><td ", "</td>\n<td ")
-        my_patern = re.compile(r"seedmed\">.*</b>")     
-        start = my_patern.search(res).start()
-        end = my_patern.search(res).end()
-        seedmed = res[start+9:end-4]
+        # res = res.replace("</td><td ", "</td>\n<td ")
+        # my_patern = re.compile(r"seedmed\">.*</b>")
+        # print(my_patern.search(res))
+        # start = my_patern.search(res).start()
+        # end = my_patern.search(res).end()
+        # # seedmed = res[start+9:end-4]
 
         res = res.replace("</td><td ", "</td>\n<td ")
-        my_patern = re.compile(r"Личи\">.*</td>")     
+        my_patern = re.compile(r"Личи\">.*</td>")
         start = my_patern.search(res).start()
         end = my_patern.search(res).end()
         leechmed = res[start+6:end-5]
 
-        items.append(Item(title, href, seedmed, leechmed, capacity))
+        # items.append(Item(title, href, seedmed, leechmed, capacity))
     return items
 
 
@@ -112,20 +109,13 @@ with requests.Session() as session:
     req = session.post(url, data, headers)
 
     text = search('Avatar', session).text
- 
-    list_of_res = get_list_search(text)
 
+    list_of_res = get_list_search(text)
 
     print(len(list_of_res))
     items = make_item_wrapper(list_of_res)
-    
+
     for item in items:
         print(f"{item.title} {item.capacity} {item.seedmed} {item.leechmed} ")
         print("######")
 
-   
-
-
-    
-   
-   
